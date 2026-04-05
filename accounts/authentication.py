@@ -11,7 +11,7 @@ class ActiveUserJWTAuthentication(JWTAuthentication):
         user = super().get_user(validated_token)
         if user.status != User.Status.ACTIVE:
             raise AuthenticationFailed(
-                {"detail": "User is inactive.", "code": "user_inactive"},
+                "User is inactive.",
                 code="user_inactive",
             )
         return user

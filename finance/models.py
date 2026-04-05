@@ -13,7 +13,7 @@ class FinancialRecordQuerySet(models.QuerySet):
 class FinancialRecordManager(models.Manager):
     """Default manager: hides soft-deleted rows."""
 
-    # exclude soft-deleted rows
+    # exclude soft-deleted rows (default)
     def get_queryset(self):
         return FinancialRecordQuerySet(self.model, using=self._db).active_only()
 
