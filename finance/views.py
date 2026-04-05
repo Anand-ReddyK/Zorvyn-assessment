@@ -1,12 +1,15 @@
 from decimal import Decimal
 
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import CanAccessDashboard, IsAdmin, IsAnalystOrAdmin
+from finance.filters import FinancialRecordFilter
 from finance.models import FinancialRecord
 from finance.serializers import FinancialRecordSerializer
 
@@ -14,12 +17,21 @@ from finance.serializers import FinancialRecordSerializer
 class FinancialRecordViewSet(viewsets.ModelViewSet):
     """
     Records: read for analyst+admin; write for admin only.
+    List supports django-filter: date_from, date_to, category, type.
+
+    ``DELETE .../records/{id}/`` — soft delete (sets ``deleted_at``) (admin only).
+    ``DELETE .../records/{id}/permanent/`` — hard delete (admin only); works for
+    active or already soft-deleted rows.
     """
 
     serializer_class = FinancialRecordSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = FinancialRecordFilter
 
     def get_queryset(self):
+        if getattr(self, "action", None) == "permanent_delete":
+            return FinancialRecord.all_objects.all()
         return FinancialRecord.objects.all()
 
     def get_permissions(self):
@@ -33,6 +45,12 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.deleted_at = timezone.now()
         instance.save(update_fields=["deleted_at", "updated_at"])
+
+    @action(detail=True, methods=["delete"], url_path="permanent")
+    def permanent_delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response(status=204)
 
 
 class DashboardSummaryView(APIView):

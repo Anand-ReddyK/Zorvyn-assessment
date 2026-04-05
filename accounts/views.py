@@ -9,7 +9,7 @@ from accounts.serializers import UserSerializer
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    User management — admin role only (DESIGN §4).
+    User management — admin role only.
     """
 
     queryset = User.objects.all().order_by("id")
