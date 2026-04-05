@@ -491,9 +491,3 @@ curl -s -X POST http://127.0.0.1:8000/api/auth/token/refresh/ \
 ```
 
 ---
-
-## Further reading (framework documentation)
-
-- Django: [https://docs.djangoproject.com/en/5.2/](https://docs.djangoproject.com/en/5.2/)
-- Django REST Framework: [https://www.django-rest-framework.org/](https://www.django-rest-framework.org/)
-- Simple JWT: [https://django-rest-framework-simplejwt.readthedocs.io/](https://django-rest-framework-simplejwt.readthedocs.io/)
