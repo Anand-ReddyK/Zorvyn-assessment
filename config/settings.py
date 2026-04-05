@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -149,6 +150,32 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 
+# LocMem is process-local (fine for dev/single worker); throttling uses this cache.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "zorvyn-throttle",
+    }
+}
+
+# Avoid throttling the rest of the test suite (shared LocMem counters).
+_RUNNING_TESTS = len(sys.argv) >= 2 and sys.argv[1] == "test"
+
+if _RUNNING_TESTS:
+    _THROTTLE_RATES = {
+        "anon": "100000/minute",
+        "user": "100000/minute",
+        "jwt_obtain": "100000/minute",
+        "jwt_refresh": "100000/minute",
+    }
+else:
+    _THROTTLE_RATES = {
+        "anon": "120/minute",
+        "user": "400/minute",
+        "jwt_obtain": "20/minute",
+        "jwt_refresh": "60/minute",
+    }
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "accounts.authentication.ActiveUserJWTAuthentication",
@@ -159,6 +186,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": _THROTTLE_RATES,
 }
 
 SIMPLE_JWT = {
