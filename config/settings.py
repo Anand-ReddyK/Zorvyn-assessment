@@ -43,7 +43,7 @@ ALLOWED_HOSTS = (
     [h.strip() for h in _hosts.split(",") if h.strip()] if _hosts else []
 )
 if DEBUG:
-    for _host in ("localhost", "127.0.0.1"):
+    for _host in ("localhost", "127.0.0.1", "testserver"):
         if _host not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(_host)
 
