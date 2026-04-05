@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
@@ -12,6 +10,7 @@ from accounts.permissions import CanAccessDashboard, IsAdmin, IsAnalystOrAdmin
 from finance.filters import FinancialRecordFilter
 from finance.models import FinancialRecord
 from finance.serializers import FinancialRecordSerializer
+from finance.services import build_dashboard_summary, parse_dashboard_query_params
 
 
 class FinancialRecordViewSet(viewsets.ModelViewSet):
@@ -55,23 +54,21 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
 
 class DashboardSummaryView(APIView):
     """
-    Dashboard aggregates — all roles with CanAccessDashboard.
-    Placeholder body until full analytics are implemented.
+    Dashboard aggregates — viewer, analyst, admin.
+
+    Query: ``date_from``, ``date_to`` (``YYYY-MM-DD``, UTC calendar-day inclusive),
+    ``recent_limit`` (default 10, max 50).
     """
 
     permission_classes = [IsAuthenticated, CanAccessDashboard]
 
     def get(self, request):
-        empty = Decimal("0.00")
-        return Response(
-            {
-                "totals": {
-                    "income": f"{empty:.2f}",
-                    "expense": f"{empty:.2f}",
-                    "net": f"{empty:.2f}",
-                },
-                "by_category": [],
-                "recent_activity": [],
-                "monthly_trend": [],
-            }
+        date_from, date_to, recent_limit = parse_dashboard_query_params(
+            request.query_params
         )
+        payload = build_dashboard_summary(
+            date_from=date_from,
+            date_to=date_to,
+            recent_limit=recent_limit,
+        )
+        return Response(payload)
